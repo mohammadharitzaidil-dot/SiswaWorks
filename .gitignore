@@ -46,3 +46,22 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# Firebase private credentials
+*service-account*.json
+*serviceAccountKey*.json
+firebase-adminsdk-*.json
+*.pem
+*.p12
+
+# Firebase emulator and debug files
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log

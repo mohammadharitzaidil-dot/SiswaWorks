@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "934467063989",
+    "project_id": "siswaworks",
+    "storage_bucket": "siswaworks.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:934467063989:android:1c60c76719a9a818ec6efc",
+        "android_client_info": {
+          "package_name": "com.siswaworks.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDpP_m07IjjPLM0g0EnpWUEFTNI4czj9x8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
