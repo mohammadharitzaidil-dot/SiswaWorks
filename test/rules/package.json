@@ -1,0 +1,20 @@
+{
+  "name": "rules",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test firestore.test.cjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "6.0.0",
+    "firebase": "13.1.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "1.14.5"
+  }
+}

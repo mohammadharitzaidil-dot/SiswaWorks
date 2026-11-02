@@ -65,3 +65,5 @@ firebase-adminsdk-*.json
 firebase-debug.log
 firestore-debug.log
 ui-debug.log
+# Node dependencies for rules tests
+node_modules/
