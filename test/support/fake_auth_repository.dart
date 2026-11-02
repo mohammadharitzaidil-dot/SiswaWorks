@@ -15,6 +15,32 @@ class FakeAuthRepository implements AuthRepository {
   AuthFailure? signInFailure;
   AuthFailure? signOutFailure;
   int signInCalls = 0;
+  int signUpCalls = 0;
+  int googleCalls = 0;
+  int resetCalls = 0;
+  AuthFailure? resetFailure;
+  @override
+  Future<void> signUp({required String email, required String password}) async {
+    signUpCalls++;
+    await signIn(email: email, password: password);
+  }
+
+  @override
+  Future<void> signInWithGoogle() async {
+    googleCalls++;
+    await signInGate?.future;
+    if (signInFailure != null) throw signInFailure!;
+    emit(const AuthSession(uid: 'google-user', email: 'google@example.com'));
+  }
+
+  @override
+  Future<void> sendPasswordReset(String email) async {
+    resetCalls++;
+    receivedEmail = email;
+    await signInGate?.future;
+    if (resetFailure != null) throw resetFailure!;
+  }
+
   String? receivedEmail;
   String? receivedPassword;
 

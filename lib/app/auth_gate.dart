@@ -7,6 +7,7 @@ import '../features/auth/presentation/auth_controller.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/settings/presentation/locale_controller.dart';
 import '../l10n/app_localizations.dart';
+import '../features/settings/presentation/first_language_prompt.dart';
 
 class AuthGate extends StatelessWidget {
   const AuthGate({
@@ -21,6 +22,16 @@ class AuthGate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context);
+    if (localeController.needsLanguageChoice) {
+      return Scaffold(
+        body: Stack(
+          children: [
+            const ModalBarrier(dismissible: false, color: Colors.black54),
+            FirstLanguagePrompt(controller: localeController),
+          ],
+        ),
+      );
+    }
     return switch (authController.status) {
       AuthStatus.loading => Scaffold(
         body: Center(

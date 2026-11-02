@@ -5,10 +5,12 @@ import '../data/locale_store.dart';
 enum LocaleFailure { load, save }
 
 class LocaleController extends ChangeNotifier {
-  LocaleController({required this.store});
+  LocaleController({required this._store});
 
-  final LocaleStore store;
+  final LocaleStore _store;
   Locale _locale = const Locale('en');
+  bool _needsLanguageChoice = true;
+  bool get needsLanguageChoice => _needsLanguageChoice;
   bool _isBusy = false;
   bool _disposed = false;
   LocaleFailure? _failure;
@@ -24,8 +26,11 @@ class LocaleController extends ChangeNotifier {
     _failure = null;
     notifyListeners();
     try {
-      final code = await store.readLanguageCode();
-      if (!_disposed) _locale = Locale(code == 'ms' ? 'ms' : 'en');
+      final code = await _store.readLanguageCode();
+      if (!_disposed) {
+        _locale = Locale(code == 'ms' ? 'ms' : 'en');
+        _needsLanguageChoice = code != 'en' && code != 'ms';
+      }
     } catch (_) {
       if (!_disposed) _failure = LocaleFailure.load;
     } finally {
@@ -43,9 +48,10 @@ class LocaleController extends ChangeNotifier {
     _pendingLanguageCode = code;
     notifyListeners();
     try {
-      await store.writeLanguageCode(code);
+      await _store.writeLanguageCode(code);
       if (!_disposed) {
         _locale = Locale(code);
+        _needsLanguageChoice = false;
         _pendingLanguageCode = null;
       }
     } catch (_) {

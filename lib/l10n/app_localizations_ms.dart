@@ -114,7 +114,7 @@ class AppLocalizationsMs extends AppLocalizations {
       'Sesi anda tidak dapat dimuatkan. Sila cuba lagi.';
 
   @override
-  String get authAccountTitle => 'Akaun';
+  String get authAccountTitle => 'Papan pemuka';
 
   @override
   String get authSignedIn => 'Anda telah log masuk';
@@ -124,4 +124,61 @@ class AppLocalizationsMs extends AppLocalizations {
 
   @override
   String get authSigningOut => 'Sedang log keluar…';
+
+  @override
+  String get authSignUp => 'Daftar akaun';
+
+  @override
+  String get authSignUpTitle => 'Cipta akaun anda';
+
+  @override
+  String get authSignUpDescription =>
+      'Gunakan e-mel dan kata laluan untuk bermula.';
+
+  @override
+  String get authGoogle => 'Teruskan dengan Google';
+
+  @override
+  String get authForgotPassword => 'Lupa kata laluan?';
+
+  @override
+  String get authResetTitle => 'Tetapkan semula kata laluan';
+
+  @override
+  String get authResetDescription =>
+      'Masukkan e-mel untuk meminta pautan tetapan semula kata laluan.';
+
+  @override
+  String get authSendReset => 'Hantar pautan';
+
+  @override
+  String get authResetSent =>
+      'Jika akaun menggunakan e-mel ini, anda akan menerima pautan tetapan semula kata laluan. Semak peti masuk dan folder spam.';
+
+  @override
+  String get authBackToSignIn => 'Kembali ke log masuk';
+
+  @override
+  String get authConfirmPassword => 'Sahkan kata laluan';
+
+  @override
+  String get authPasswordMismatch => 'Kata laluan tidak sepadan.';
+
+  @override
+  String get authWeakPassword =>
+      'Gunakan sekurang-kurangnya 6 aksara dan penuhi syarat kata laluan.';
+
+  @override
+  String get authEmailInUse =>
+      'Akaun ini tidak dapat dicipta. Cuba log masuk atau tetapkan semula kata laluan.';
+
+  @override
+  String get authCancelled => 'Log masuk dibatalkan.';
+
+  @override
+  String get settingsFirstLanguage => 'Pilih bahasa anda';
+
+  @override
+  String get settingsFirstLanguageDescription =>
+      'Anda boleh menukarnya kemudian dalam Tetapan papan pemuka.';
 }

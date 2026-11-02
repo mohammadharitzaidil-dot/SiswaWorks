@@ -1,4 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../domain/auth_failure.dart';
 import '../domain/auth_session.dart';
@@ -8,6 +10,54 @@ class FirebaseAuthRepository implements AuthRepository {
   FirebaseAuthRepository(this._auth);
 
   final FirebaseAuth _auth;
+  static Future<void>? _googleInitialization;
+
+  @override
+  Future<void> signUp({required String email, required String password}) async {
+    try {
+      await _auth.createUserWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
+    } on FirebaseAuthException catch (error) {
+      throw failureForCode(error.code);
+    }
+  }
+
+  @override
+  Future<void> sendPasswordReset(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email.trim());
+    } on FirebaseAuthException catch (error) {
+      // Do not disclose whether this address belongs to an account.
+      if (error.code != 'user-not-found') throw failureForCode(error.code);
+    }
+  }
+
+  @override
+  Future<void> signInWithGoogle() async {
+    try {
+      if (kIsWeb) {
+        await _auth.signInWithPopup(GoogleAuthProvider());
+      } else {
+        await (_googleInitialization ??= GoogleSignIn.instance.initialize());
+        final account = await GoogleSignIn.instance.authenticate();
+        final token = account.authentication.idToken;
+        if (token == null) throw const AuthFailure(AuthFailureCode.unavailable);
+        await _auth.signInWithCredential(
+          GoogleAuthProvider.credential(idToken: token),
+        );
+      }
+    } on GoogleSignInException catch (error) {
+      throw AuthFailure(
+        error.code == GoogleSignInExceptionCode.canceled
+            ? AuthFailureCode.cancelled
+            : AuthFailureCode.unavailable,
+      );
+    } on FirebaseAuthException catch (error) {
+      throw failureForCode(error.code);
+    }
+  }
 
   @override
   Stream<AuthSession?> watchSession() async* {
@@ -50,6 +100,10 @@ class FirebaseAuthRepository implements AuthRepository {
     'wrong-password' ||
     'user-not-found' ||
     'invalid-email' => AuthFailureCode.invalidCredentials,
+    'weak-password' => AuthFailureCode.weakPassword,
+    'email-already-in-use' => AuthFailureCode.emailInUse,
+    'popup-closed-by-user' ||
+    'cancelled-popup-request' => AuthFailureCode.cancelled,
     'user-disabled' => AuthFailureCode.disabled,
     'too-many-requests' => AuthFailureCode.tooManyRequests,
     'network-request-failed' => AuthFailureCode.network,

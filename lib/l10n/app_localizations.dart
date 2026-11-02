@@ -287,7 +287,7 @@ abstract class AppLocalizations {
   /// No description provided for @authAccountTitle.
   ///
   /// In en, this message translates to:
-  /// **'Account'**
+  /// **'Dashboard'**
   String get authAccountTitle;
 
   /// No description provided for @authSignedIn.
@@ -307,6 +307,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Logging out…'**
   String get authSigningOut;
+
+  /// No description provided for @authSignUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up'**
+  String get authSignUp;
+
+  /// No description provided for @authSignUpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your account'**
+  String get authSignUpTitle;
+
+  /// No description provided for @authSignUpDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Use your email and a password to get started.'**
+  String get authSignUpDescription;
+
+  /// No description provided for @authGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get authGoogle;
+
+  /// No description provided for @authForgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get authForgotPassword;
+
+  /// No description provided for @authResetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset your password'**
+  String get authResetTitle;
+
+  /// No description provided for @authResetDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email to request a password reset link.'**
+  String get authResetDescription;
+
+  /// No description provided for @authSendReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Send reset link'**
+  String get authSendReset;
+
+  /// No description provided for @authResetSent.
+  ///
+  /// In en, this message translates to:
+  /// **'If an account uses this email, you will receive a password reset link. Check your inbox and spam folder.'**
+  String get authResetSent;
+
+  /// No description provided for @authBackToSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to sign in'**
+  String get authBackToSignIn;
+
+  /// No description provided for @authConfirmPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm password'**
+  String get authConfirmPassword;
+
+  /// No description provided for @authPasswordMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match.'**
+  String get authPasswordMismatch;
+
+  /// No description provided for @authWeakPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Use at least 6 characters and meet the password requirements.'**
+  String get authWeakPassword;
+
+  /// No description provided for @authEmailInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to create this account. Try signing in or resetting your password.'**
+  String get authEmailInUse;
+
+  /// No description provided for @authCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in cancelled.'**
+  String get authCancelled;
+
+  /// No description provided for @settingsFirstLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your language'**
+  String get settingsFirstLanguage;
+
+  /// No description provided for @settingsFirstLanguageDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'You can change this later in dashboard Settings.'**
+  String get settingsFirstLanguageDescription;
 }
 
 class _AppLocalizationsDelegate
