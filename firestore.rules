@@ -2,6 +2,54 @@
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function validProfile(data) {
+      let fields = [
+        'displayName', 'role', 'organiserApproved',
+        'skillIds', 'preferredCategoryIds',
+        'createdAt', 'updatedAt'
+      ];
+
+      return data.keys().hasAll(fields)
+        && data.keys().hasOnly(fields)
+        && data.displayName is string
+        && data.displayName.size() > 0
+        && data.displayName.size() <= 80
+        && data.displayName == data.displayName.trim()
+        && data.role in ['student', 'organiser']
+        && data.organiserApproved is bool
+        && data.skillIds is list
+        && data.preferredCategoryIds is list
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /users/{uid} {
+      allow get: if isOwner(uid);
+      allow list: if false;
+
+      allow create: if isOwner(uid)
+        && validProfile(request.resource.data)
+        && request.resource.data.organiserApproved == false
+        && request.resource.data.skillIds == []
+        && request.resource.data.preferredCategoryIds == []
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      // Initial phase: users may edit their name only.
+      // Skills/categories will use the agreed shared catalog later.
+      allow update: if isOwner(uid)
+        && validProfile(request.resource.data)
+        && request.resource.data.diff(resource.data)
+          .affectedKeys().hasOnly(['displayName', 'updatedAt'])
+        && request.resource.data.updatedAt == request.time;
+
+      allow delete: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
