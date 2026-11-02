@@ -132,30 +132,86 @@ void main() {
   });
 
   testWidgets(
-    'changing language preserves login input and translates validation',
+    'login has no Settings and Google cancellation stays signed out',
     (tester) async {
-      await mount(tester, FakeAuthRepository());
+      final repo = FakeAuthRepository()
+        ..signInFailure = const AuthFailure(AuthFailureCode.cancelled);
+      await mount(tester, repo);
+      expect(find.text('Settings'), findsNothing);
+      await tester.ensureVisible(find.text('Continue with Google'));
+      await tester.tap(find.text('Continue with Google'));
+      await tester.pumpAndSettle();
+      expect(repo.googleCalls, 1);
+      expect(find.text('Log in to SiswaWorks'), findsOneWidget);
+      expect(
+        find.text('Something went wrong. Please try again.'),
+        findsNothing,
+      );
+      repo.signInFailure = null;
+      await tester.tap(find.text('Continue with Google'));
+      await tester.pumpAndSettle();
+      expect(find.text('google@example.com'), findsOneWidget);
+      expect(find.text('Settings'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'sign up requires a matching confirmation before creating session',
+    (tester) async {
+      final repo = FakeAuthRepository();
+      await mount(tester, repo);
+      await tester.ensureVisible(find.text('Sign up'));
+      await tester.tap(find.text('Sign up'));
+      await tester.pumpAndSettle();
+      await fill(tester);
+      await tester.ensureVisible(find.text('Sign up'));
+      await tester.tap(find.text('Sign up'));
+      await tester.pumpAndSettle();
+      expect(find.text('Passwords do not match.'), findsOneWidget);
+      expect(repo.signUpCalls, 0);
+      await tester.enterText(
+        find.byKey(const ValueKey('signup-confirm-password')),
+        ' test-password ',
+      );
+      await tester.ensureVisible(find.text('Sign up'));
+      await tester.tap(find.text('Sign up'));
+      await tester.pumpAndSettle();
+      expect(repo.signUpCalls, 1);
+      expect(repo.receivedPassword, ' test-password ');
+      expect(find.text('You’re logged in'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'reset failure does not show success; retry sends email without signing in',
+    (tester) async {
+      final repo = FakeAuthRepository()
+        ..resetFailure = const AuthFailure(AuthFailureCode.network);
+      await mount(tester, repo);
+      await tester.tap(find.text('Forgot password?'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('login-password')), findsNothing);
       await tester.enterText(
         find.byKey(const ValueKey('login-email')),
-        'invalid',
+        ' user@example.com ',
       );
-      await tester.tap(find.text('Log in'));
-      await tester.pump();
-      await tester.tap(find.text('Settings'));
+      await tester.tap(find.text('Send reset link'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Bahasa Melayu'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byType(BackButton));
-      await tester.pumpAndSettle();
-      expect(find.text('Masukkan alamat e-mel yang sah.'), findsOneWidget);
-      expect(find.text('Masukkan kata laluan anda.'), findsOneWidget);
+      expect(find.textContaining('If an account uses'), findsNothing);
       expect(
-        tester
-            .widget<TextFormField>(find.byKey(const ValueKey('login-email')))
-            .controller!
-            .text,
-        'invalid',
+        find.text('Unable to connect. Check your connection and try again.'),
+        findsOneWidget,
       );
+      repo.resetFailure = null;
+      await tester.tap(find.text('Send reset link'));
+      await tester.pumpAndSettle();
+      expect(repo.receivedEmail, 'user@example.com');
+      expect(find.textContaining('If an account uses'), findsOneWidget);
+      expect(repo.current, isNull);
+      await tester.ensureVisible(find.text('Back to sign in'));
+      await tester.tap(find.text('Back to sign in'));
+      await tester.pumpAndSettle();
+      expect(find.text('Log in to SiswaWorks'), findsOneWidget);
     },
   );
 

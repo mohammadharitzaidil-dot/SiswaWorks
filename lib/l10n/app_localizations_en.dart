@@ -114,7 +114,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your session could not be loaded. Please try again.';
 
   @override
-  String get authAccountTitle => 'Account';
+  String get authAccountTitle => 'Dashboard';
 
   @override
   String get authSignedIn => 'You’re logged in';
@@ -124,4 +124,61 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authSigningOut => 'Logging out…';
+
+  @override
+  String get authSignUp => 'Sign up';
+
+  @override
+  String get authSignUpTitle => 'Create your account';
+
+  @override
+  String get authSignUpDescription =>
+      'Use your email and a password to get started.';
+
+  @override
+  String get authGoogle => 'Continue with Google';
+
+  @override
+  String get authForgotPassword => 'Forgot password?';
+
+  @override
+  String get authResetTitle => 'Reset your password';
+
+  @override
+  String get authResetDescription =>
+      'Enter your email to request a password reset link.';
+
+  @override
+  String get authSendReset => 'Send reset link';
+
+  @override
+  String get authResetSent =>
+      'If an account uses this email, you will receive a password reset link. Check your inbox and spam folder.';
+
+  @override
+  String get authBackToSignIn => 'Back to sign in';
+
+  @override
+  String get authConfirmPassword => 'Confirm password';
+
+  @override
+  String get authPasswordMismatch => 'Passwords do not match.';
+
+  @override
+  String get authWeakPassword =>
+      'Use at least 6 characters and meet the password requirements.';
+
+  @override
+  String get authEmailInUse =>
+      'Unable to create this account. Try signing in or resetting your password.';
+
+  @override
+  String get authCancelled => 'Sign-in cancelled.';
+
+  @override
+  String get settingsFirstLanguage => 'Choose your language';
+
+  @override
+  String get settingsFirstLanguageDescription =>
+      'You can change this later in dashboard Settings.';
 }

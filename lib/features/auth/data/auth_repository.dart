@@ -9,6 +9,10 @@ abstract interface class AuthRepository {
   /// Session changes are delivered by watchSession. Throws AuthFailure on error.
   Future<void> signIn({required String email, required String password});
 
+  Future<void> signUp({required String email, required String password});
+  Future<void> signInWithGoogle();
+  Future<void> sendPasswordReset(String email);
+
   /// Ends this device's Firebase session. Throws AuthFailure on error.
   Future<void> signOut();
 }

@@ -1,3 +1,5 @@
+> Historical login-only record. See [AUTH_FLOW_UPDATE.md](AUTH_FLOW_UPDATE.md) for the current authentication and first-use language flow.
+
 # Email/password login verification — 2 November 2026
 
 Tester: Codex for Developer A. Standards v1.0. Base commit `9decc0e` plus

@@ -81,22 +81,58 @@ class AuthController extends ChangeNotifier {
     );
   }
 
+  void clearFailure() {
+    if (_disposed || _isBusy) return;
+    _failure = null;
+    notifyListeners();
+  }
+
+  Future<void> signUp({required String email, required String password}) async {
+    if (_status != AuthStatus.signedOut ||
+        LoginValidation.email(email) != null ||
+        password.length < 6) {
+      return;
+    }
+    await _perform(
+      () => repository.signUp(email: email.trim(), password: password),
+    );
+  }
+
+  Future<void> signInWithGoogle() async {
+    if (_status != AuthStatus.signedOut) return;
+    await _perform(repository.signInWithGoogle);
+  }
+
+  Future<bool> sendPasswordReset(String email) async {
+    if (_status != AuthStatus.signedOut ||
+        LoginValidation.email(email) != null) {
+      return false;
+    }
+    return _perform(() => repository.sendPasswordReset(email.trim()));
+  }
+
   Future<void> signOut() async {
     if (_status != AuthStatus.signedIn) return;
     await _perform(repository.signOut);
   }
 
-  Future<void> _perform(Future<void> Function() operation) async {
-    if (_disposed || _isBusy) return;
+  Future<bool> _perform(Future<void> Function() operation) async {
+    if (_disposed || _isBusy) return false;
     final generation = _generation;
     _isBusy = true;
     _failure = null;
     notifyListeners();
     try {
       await operation();
-      // The session stream is the authority; completion alone never opens a route.
+      // Session events alone open the authenticated route.
+      return !_disposed && generation == _generation;
     } catch (error) {
-      if (!_disposed && generation == _generation) _failure = _code(error);
+      if (!_disposed &&
+          generation == _generation &&
+          _code(error) != AuthFailureCode.cancelled) {
+        _failure = _code(error);
+      }
+      return false;
     } finally {
       if (!_disposed && generation == _generation) {
         _isBusy = false;

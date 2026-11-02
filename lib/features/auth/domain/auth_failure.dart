@@ -5,6 +5,9 @@ enum AuthFailureCode {
   network,
   unavailable,
   unknown,
+  weakPassword,
+  emailInUse,
+  cancelled,
 }
 
 class AuthFailure implements Exception {

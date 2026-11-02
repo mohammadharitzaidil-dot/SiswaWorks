@@ -1,3 +1,5 @@
+> Historical login-only record. See [AUTH_FLOW_UPDATE.md](AUTH_FLOW_UPDATE.md) for the current authentication and first-use language flow.
+
 # Email/password login — standards v1.0
 
 Owner: Developer A. Reviewer: Developer B (UI/session/localization).
