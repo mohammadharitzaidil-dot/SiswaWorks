@@ -1,29 +1,15 @@
+import 'package:flutter/widgets.dart';
 
-import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
+import 'app/bootstrap.dart';
+import 'app/main_app.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+  final dependencies = await bootstrap();
+  runApp(
+    MainApp(
+      localeController: dependencies.localeController,
+      authController: dependencies.authController,
+    ),
   );
-
-  runApp(const MainApp());
-}
-
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('SiswaWorks Firebase Test'),
-        ),
-      ),
-    );
-  }
 }
