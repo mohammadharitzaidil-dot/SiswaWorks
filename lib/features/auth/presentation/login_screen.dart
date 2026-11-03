@@ -30,6 +30,12 @@ class _LoginScreenState extends State<LoginScreen> {
   GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   _AuthMode _mode = _AuthMode.signIn;
   final _confirmation = TextEditingController();
+  String _accountType = 'individual';
+  String label(String ms, String en) =>
+      Localizations.localeOf(context).languageCode == 'ms' ? ms : en;
+  String get registrationLabel => _accountType == 'individual'
+      ? label('Daftar individu', 'Register as an individual')
+      : label('Daftar organisasi', 'Register an organization');
   bool _resetSent = false;
   final _email = TextEditingController();
   final _password = TextEditingController();
@@ -78,7 +84,29 @@ class _LoginScreenState extends State<LoginScreen> {
           password: _password.text,
         );
       case _AuthMode.signUp:
+        final email = _email.text.trim();
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialog) => AlertDialog(
+            title: Text(registrationLabel),
+            content: Text(email),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialog, false),
+                child: Text(label('Kembali', 'Back')),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialog, true),
+                child: Text(
+                  label('Sahkan pendaftaran', 'Confirm registration'),
+                ),
+              ),
+            ],
+          ),
+        );
+        if (!mounted || confirmed != true) return;
         await widget.authController.signUp(
+          accountType: _accountType,
           email: _email.text,
           password: _password.text,
         );
@@ -105,7 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final failure = widget.authController.failure;
       final title = switch (_mode) {
         _AuthMode.signIn => strings.authLoginTitle,
-        _AuthMode.signUp => strings.authSignUpTitle,
+        _AuthMode.signUp => registrationLabel,
         _AuthMode.reset => strings.authResetTitle,
       };
       final description = switch (_mode) {
@@ -131,6 +159,13 @@ class _LoginScreenState extends State<LoginScreen> {
               Text(title, style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: AppSpacing.small),
               Text(description),
+              if (_mode == _AuthMode.signUp && _accountType == 'organization')
+                Text(
+                  label(
+                    'Selepas sahkan e-mel, lengkapkan maklumat organisasi. Sediakan borang bertandatangan atau bercop untuk semakan.',
+                    'After verifying your email, complete your organization details. Prepare a signed or stamped form for review.',
+                  ),
+                ),
               const SizedBox(height: AppSpacing.large),
               AutofillGroup(
                 child: Form(
@@ -272,20 +307,32 @@ class _LoginScreenState extends State<LoginScreen> {
                       : widget.authController.signInWithGoogle,
                   child: Text(strings.authGoogle),
                 ),
-              TextButton(
-                onPressed: busy
-                    ? null
-                    : () => _changeMode(
-                        _mode == _AuthMode.signIn
-                            ? _AuthMode.signUp
-                            : _AuthMode.signIn,
-                      ),
-                child: Text(
-                  _mode == _AuthMode.signIn
-                      ? strings.authSignUp
-                      : strings.authBackToSignIn,
+              if (_mode == _AuthMode.signIn)
+                for (final type in ['individual', 'organization'])
+                  TextButton(
+                    onPressed: busy
+                        ? null
+                        : () {
+                            _accountType = type;
+                            _changeMode(_AuthMode.signUp);
+                          },
+                    child: Text(
+                      type == 'individual'
+                          ? label(
+                              'Daftar individu',
+                              'Register as an individual',
+                            )
+                          : label(
+                              'Daftar organisasi',
+                              'Register an organization',
+                            ),
+                    ),
+                  )
+              else
+                TextButton(
+                  onPressed: busy ? null : () => _changeMode(_AuthMode.signIn),
+                  child: Text(strings.authBackToSignIn),
                 ),
-              ),
             ],
           ),
         ),

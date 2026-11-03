@@ -87,14 +87,22 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> signUp({required String email, required String password}) async {
+  Future<void> signUp({
+    required String email,
+    required String password,
+    required String accountType,
+  }) async {
     if (_status != AuthStatus.signedOut ||
         LoginValidation.email(email) != null ||
         password.length < 6) {
       return;
     }
     await _perform(
-      () => repository.signUp(email: email.trim(), password: password),
+      () => repository.signUp(
+        email: email.trim(),
+        password: password,
+        accountType: accountType,
+      ),
     );
   }
 

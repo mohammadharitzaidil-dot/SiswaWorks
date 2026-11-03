@@ -1,3 +1,6 @@
+import '../features/auth/data/firebase_auth_repository.dart';
+import 'onboarding_gate.dart';
+
 import 'package:flutter/material.dart';
 
 import '../core/widgets/app_message.dart';
@@ -56,6 +59,19 @@ class AuthGate extends StatelessWidget {
         authController: authController,
         localeController: localeController,
       ),
+      AuthStatus.signedIn
+          when authController.repository is FirebaseAuthRepository =>
+        OnboardingGate(
+          key: ValueKey(authController.session!.uid),
+          auth: (authController.repository as FirebaseAuthRepository).auth,
+          uid: authController.session!.uid,
+          signOut: authController.signOut,
+          account: AccountScreen(
+            session: authController.session!,
+            authController: authController,
+            localeController: localeController,
+          ),
+        ),
       AuthStatus.signedIn => AccountScreen(
         session: authController.session!,
         authController: authController,

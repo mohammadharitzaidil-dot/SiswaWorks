@@ -1,14 +1,14 @@
-﻿rules_version = '2';
+rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
     function isOwner(uid) {
-      return request.auth != null && request.auth.uid == uid;
+      return request.auth != null && request.auth.uid == uid && request.auth.token.email_verified == true;
     }
 
     function validProfile(data) {
       let fields = [
-        'displayName', 'role', 'organiserApproved',
+        'displayName', 'accountType',
         'skillIds', 'preferredCategoryIds',
         'createdAt', 'updatedAt'
       ];
@@ -16,15 +16,24 @@ service cloud.firestore {
       return data.keys().hasAll(fields)
         && data.keys().hasOnly(fields)
         && data.displayName is string
-        && data.displayName.size() > 0
+        && data.displayName.size() >= 0
         && data.displayName.size() <= 80
         && data.displayName == data.displayName.trim()
-        && data.role in ['student', 'organiser']
-        && data.organiserApproved is bool
+        && data.accountType in ['individual', 'organization']
+        
         && data.skillIds is list
         && data.preferredCategoryIds is list
         && data.createdAt is timestamp
         && data.updatedAt is timestamp;
+    }
+
+    match /signup_intents/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.auth.token.firebase.sign_in_provider == 'password'
+        && !exists(/databases/$(database)/documents/users/$(uid))
+        && request.resource.data.keys().hasOnly(['accountType'])
+        && request.resource.data.accountType in ['individual', 'organization'];
     }
 
     match /users/{uid} {
@@ -33,7 +42,9 @@ service cloud.firestore {
 
       allow create: if isOwner(uid)
         && validProfile(request.resource.data)
-        && request.resource.data.organiserApproved == false
+        && (!exists(/databases/$(database)/documents/signup_intents/$(uid))
+          || get(/databases/$(database)/documents/signup_intents/$(uid)).data.accountType == request.resource.data.accountType)
+        
         && request.resource.data.skillIds == []
         && request.resource.data.preferredCategoryIds == []
         && request.resource.data.createdAt == request.time
@@ -43,6 +54,7 @@ service cloud.firestore {
       // Skills/categories will use the agreed shared catalog later.
       allow update: if isOwner(uid)
         && validProfile(request.resource.data)
+        && request.resource.data.displayName.size() > 0
         && request.resource.data.diff(resource.data)
           .affectedKeys().hasOnly(['displayName', 'updatedAt'])
         && request.resource.data.updatedAt == request.time;
@@ -50,8 +62,140 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /admins/{uid} { allow get: if isOwner(uid); }
+    function reviewer() {
+      return request.auth != null && request.auth.token.email_verified == true
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accountType == 'individual'
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'organizationReviewer';
+    }
+    match /organization_requests/{uid} {
+      function ownsOrganization() {
+        return isOwner(uid) && get(/databases/$(database)/documents/users/$(uid)).data.accountType == 'organization';
+      }
+      function textField(value) { return value is string && value.size() <= 160; }
+      function validDraft(d) {
+        return d.keys().hasOnly(['officialName','organizationType','affiliation','representativeName','representativePosition','revision','status','updatedAt','evidenceName','submittedAt'])
+          && textField(d.officialName) && textField(d.organizationType) && textField(d.affiliation)
+          && textField(d.representativeName) && textField(d.representativePosition)
+          && (!('evidenceName' in d) || (d.evidenceName is string && d.evidenceName == getAfter(/databases/$(database)/documents/organization_requests/$(uid)/documents/evidence).data.name))
+          && ((d.status == 'draft' && !('submittedAt' in d)) ||
+            (d.status == 'pending' && d.submittedAt == request.time && 'evidenceName' in d
+             && d.officialName.trim().size() > 0 && d.organizationType.trim().size() > 0
+             && d.representativeName.trim().size() > 0 && d.representativePosition.trim().size() > 0))
+          && d.revision is int && d.updatedAt == request.time;
+      }
+      match /documents/evidence {
+        allow get: if ownsOrganization() || (reviewer() && get(/databases/$(database)/documents/organization_requests/$(uid)).data.status == "pending");
+        allow create, update: if ownsOrganization()
+          && request.resource.data.keys().hasOnly(['name','content','revision'])
+          && (!exists(/databases/$(database)/documents/organization_requests/$(uid)) || get(/databases/$(database)/documents/organization_requests/$(uid)).data.status in ['draft','rejected'])
+          && request.resource.data.content is bytes && request.resource.data.content.size() <= 921600
+          && request.resource.data.content.toBase64().matches('JVBERi[0-3].*')
+          && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 200
+          && getAfter(/databases/$(database)/documents/organization_requests/$(uid)).data.status == 'draft'
+          && getAfter(/databases/$(database)/documents/organization_requests/$(uid)).data.evidenceName == request.resource.data.name
+          && getAfter(/databases/$(database)/documents/organization_requests/$(uid)).data.revision == request.resource.data.revision
+          && (!exists(/databases/$(database)/documents/organization_requests/$(uid)) ||
+            get(/databases/$(database)/documents/organization_requests/$(uid)).data.revision < request.resource.data.revision);
+      }
+      allow read: if ownsOrganization() || (reviewer() && resource.data.status == 'pending');
+      allow update: if reviewer() && request.auth.uid != uid && resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','revision','updatedAt','reviewedAt','reviewedBy','rejectionReason'])
+        && request.resource.data.reviewedBy == request.auth.uid && request.resource.data.reviewedAt == request.time
+        && request.resource.data.updatedAt == request.time && request.resource.data.revision == resource.data.revision+1
+        && ((request.resource.data.status == 'approved' && request.resource.data.rejectionReason == '') ||
+            (request.resource.data.status == 'rejected' && request.resource.data.rejectionReason is string && request.resource.data.rejectionReason.trim().size() > 0 && request.resource.data.rejectionReason.size() <= 500));
+      allow create: if ownsOrganization() && validDraft(request.resource.data) && request.resource.data.revision == 1;
+      allow update: if ownsOrganization() && (resource.data.status in ['draft','rejected'] || (resource.data.status == 'pending' && request.resource.data.status == 'draft' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','submittedAt','updatedAt','revision']))) && validDraft(request.resource.data)
+        && request.resource.data.revision == resource.data.revision + 1;
+    }
+    function monthlyKey(t) {
+      let local = t + duration.value(8,'h');
+      return string(local.year()) + '-' + (local.month()<10 ? '0' : '') + string(local.month());
+    }
+    function member(kind) {
+      return request.auth != null && request.auth.token.email_verified == true
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accountType == kind;
+    }
+    function orgActive(uid) {
+      return get(/databases/$(database)/documents/organization_requests/$(uid)).data.status == 'approved';
+    }
+    function jobDraft(d) {
+      return d.keys().hasOnly(['ownerOrgUid','status','title','description','venue','payAmountSen','payBasis','currency','requiredCount','startsAt','endsAt','deadlineAt','revision','updatedAt','acceptedCount','applicantCount'])
+        && d.ownerOrgUid == request.auth.uid && d.status == 'draft' && d.updatedAt == request.time
+        && d.title is string && d.title.size()<=160 && d.description is string && d.description.size()<=2000
+        && d.venue is string && d.venue.size()<=240 && d.payAmountSen is int && d.payAmountSen>=0
+        && d.payBasis in ['hour','shift'] && d.currency=='MYR' && d.requiredCount is int && d.requiredCount>0
+        && (d.startsAt==null || d.startsAt is timestamp) && (d.endsAt==null || d.endsAt is timestamp)
+        && (d.deadlineAt==null || d.deadlineAt is timestamp) && d.acceptedCount==0 && d.applicantCount==0;
+    }
+    function usagePath(uid,key) {return /databases/$(database)/documents/monthly_usage/$(uid)/months/$(key);}
+    function quota(uid) {
+      let plan=/databases/$(database)/documents/organiser_plans/$(uid);
+      return exists(plan) && get(plan).data.tier=='premium' && get(plan).data.startsAt<=request.time && get(plan).data.expiresAt>request.time ? 30 : 10;
+    }
+    function usageValid(uid,key,job) {
+      let path=usagePath(uid,key);
+      let after=getAfter(path).data;
+      return after.jobId==job && after.updatedAt==request.time && after.count==(exists(path)?get(path).data.count+1:1) && after.count<=quota(uid);
+    }
+    function intakeOpen(job) {
+      return job.status=='open' && request.time<job.deadlineAt && request.time<job.startsAt && job.acceptedCount<job.requiredCount;
+    }
+    match /applications/{id} {
+      allow get: if member('individual') && (resource==null || resource.data.studentId==request.auth.uid)
+        || member('organization') && resource.data.ownerOrgUid==request.auth.uid;
+      allow list: if member('individual') && resource.data.studentId==request.auth.uid
+        || member('organization') && resource.data.ownerOrgUid==request.auth.uid;
+      function validApplication(d) {
+        let jobPath=/databases/$(database)/documents/jobs/$(d.jobId);
+        let job=get(jobPath).data;
+        let profile=get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+        return d.keys().hasOnly(['jobId','studentId','ownerOrgUid','jobTitle','displayName','skillIds','selectedExperienceSnapshot','status','submittedAt'])
+          && id==d.jobId+'_'+request.auth.uid && d.studentId==request.auth.uid && d.ownerOrgUid==job.ownerOrgUid
+          && d.status=='pending' && d.submittedAt==request.time && d.jobTitle==job.title && d.displayName==profile.displayName
+          && d.skillIds==profile.get('skillIds',[]) && d.selectedExperienceSnapshot==[] && intakeOpen(job)
+          && getAfter(jobPath).data.applicantCount==job.applicantCount+1;
+      }
+      allow create: if member('individual') && validApplication(request.resource.data);
+    }
+    match /jobs/{id} {
+      function pairedApplication(){
+        let key=id+'_'+request.auth.uid;
+        let path=/databases/$(database)/documents/applications/$(key);
+        return !exists(path) && getAfter(path).data.jobId==id && getAfter(path).data.studentId==request.auth.uid;
+      }
+      allow update: if member('individual') && intakeOpen(resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['applicantCount'])
+        && request.resource.data.applicantCount==resource.data.applicantCount+1 && pairedApplication();
+      allow read: if (member('organization') && resource.data.ownerOrgUid==request.auth.uid) || (member('individual') && resource.data.status=='open');
+      allow create: if member('organization') && jobDraft(request.resource.data) && request.resource.data.revision==1;
+      allow update: if member('organization') && resource.data.ownerOrgUid==request.auth.uid && resource.data.status=='draft' && request.resource.data.revision==resource.data.revision+1
+        && (jobDraft(request.resource.data) || (request.resource.data.status=='open' && orgActive(request.auth.uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','publishedAt','publishedMonthKey','updatedAt','revision'])
+        && resource.data.title.trim().size()>0 && resource.data.description.trim().size()>0 && resource.data.venue.trim().size()>0
+        && resource.data.payAmountSen>0 && request.time<resource.data.deadlineAt && resource.data.deadlineAt<=resource.data.startsAt && resource.data.startsAt<resource.data.endsAt
+        && (resource.data.startsAt+duration.value(8,'h')).date()==(resource.data.endsAt+duration.value(8,'h')).date()
+        && request.resource.data.updatedAt==request.time && request.resource.data.publishedAt==request.time
+        && request.resource.data.publishedMonthKey==monthlyKey(request.time) && usageValid(request.auth.uid,monthlyKey(request.time),id)));
+    }
+    match /monthly_usage/{uid}/months/{key} {
+      allow get: if isOwner(uid);
+      allow create,update: if isOwner(uid) && member('organization') && key==monthlyKey(request.time)
+        && request.resource.data.keys().hasOnly(['count','jobId','updatedAt'])
+        && usageValid(uid,key,request.resource.data.jobId)
+        && get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.status=='draft'
+        && getAfter(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.status=='open'
+        && getAfter(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.ownerOrgUid==uid;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
   }
 }
+
+
+
+
+

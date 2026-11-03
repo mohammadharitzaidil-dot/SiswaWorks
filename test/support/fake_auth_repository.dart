@@ -15,12 +15,18 @@ class FakeAuthRepository implements AuthRepository {
   AuthFailure? signInFailure;
   AuthFailure? signOutFailure;
   int signInCalls = 0;
+  String? registeredType;
   int signUpCalls = 0;
   int googleCalls = 0;
   int resetCalls = 0;
   AuthFailure? resetFailure;
   @override
-  Future<void> signUp({required String email, required String password}) async {
+  Future<void> signUp({
+    required String email,
+    required String password,
+    required String accountType,
+  }) async {
+    registeredType = accountType;
     signUpCalls++;
     await signIn(email: email, password: password);
   }

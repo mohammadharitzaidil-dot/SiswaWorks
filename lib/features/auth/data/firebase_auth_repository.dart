@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -10,15 +11,26 @@ class FirebaseAuthRepository implements AuthRepository {
   FirebaseAuthRepository(this._auth);
 
   final FirebaseAuth _auth;
+  FirebaseAuth get auth => _auth;
   static Future<void>? _googleInitialization;
 
   @override
-  Future<void> signUp({required String email, required String password}) async {
+  Future<void> signUp({
+    required String email,
+    required String password,
+    required String accountType,
+  }) async {
     try {
-      await _auth.createUserWithEmailAndPassword(
+      final credential = await _auth.createUserWithEmailAndPassword(
         email: email.trim(),
         password: password,
       );
+      final user = credential.user!;
+      await FirebaseFirestore.instanceFor(app: _auth.app)
+          .collection('signup_intents')
+          .doc(user.uid)
+          .set({'accountType': accountType});
+      await user.sendEmailVerification();
     } on FirebaseAuthException catch (error) {
       throw failureForCode(error.code);
     }

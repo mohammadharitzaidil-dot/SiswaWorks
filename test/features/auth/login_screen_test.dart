@@ -160,8 +160,8 @@ void main() {
     (tester) async {
       final repo = FakeAuthRepository();
       await mount(tester, repo);
-      await tester.ensureVisible(find.text('Sign up'));
-      await tester.tap(find.text('Sign up'));
+      await tester.ensureVisible(find.text('Register an organization'));
+      await tester.tap(find.text('Register an organization'));
       await tester.pumpAndSettle();
       await fill(tester);
       await tester.ensureVisible(find.text('Sign up'));
@@ -176,6 +176,10 @@ void main() {
       await tester.ensureVisible(find.text('Sign up'));
       await tester.tap(find.text('Sign up'));
       await tester.pumpAndSettle();
+      expect(repo.signUpCalls, 0);
+      await tester.tap(find.text('Confirm registration'));
+      await tester.pumpAndSettle();
+      expect(repo.registeredType, 'organization');
       expect(repo.signUpCalls, 1);
       expect(repo.receivedPassword, ' test-password ');
       expect(find.text('You’re logged in'), findsOneWidget);
