@@ -67,3 +67,7 @@ firestore-debug.log
 ui-debug.log
 # Node dependencies for rules tests
 node_modules/
+
+# Local AI tooling
+/.agents/
+/skills-lock.json

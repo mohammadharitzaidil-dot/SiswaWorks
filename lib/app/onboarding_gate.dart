@@ -138,9 +138,16 @@ class _OnboardingGateState extends State<OnboardingGate> {
         }
       }
       if (mounted) setState(() => step = next);
-    } catch (_) {
-      if (mounted) setState(() => step = 'error');
-    }
+    } catch (error) {
+  if (error is FirebaseException) {
+    debugPrint(
+      'Account loading failed: ${error.plugin}/${error.code}',
+    );
+  } else {
+    debugPrint('Account loading failed: ${error.runtimeType}');
+  }
+  if (mounted) setState(() => step = 'error');
+}
   }
 
   Future<void> act(Future<void> Function() action) async {
